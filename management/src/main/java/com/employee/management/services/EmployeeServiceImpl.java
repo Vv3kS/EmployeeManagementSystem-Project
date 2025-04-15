@@ -1,8 +1,8 @@
 package com.employee.management.services;
 
 import com.employee.management.customException.DepartmentNotFoundException;
-import com.employee.management.customException.ProjectNotFoundException;
 import com.employee.management.customException.EmployeeNotFoundException;
+import com.employee.management.customException.ProjectNotFoundException;
 import com.employee.management.dto.EmployeeDto;
 import com.employee.management.entities.Department;
 import com.employee.management.entities.Employee;
@@ -10,6 +10,7 @@ import com.employee.management.entities.Project;
 import com.employee.management.repositories.DepartmentRepository;
 import com.employee.management.repositories.EmployeeRepository;
 import com.employee.management.repositories.ProjectRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,10 +30,70 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
+    @Transactional
     @Override
     public EmployeeDto addEmployee(EmployeeDto edto) {
-        return mapToDto(employeeRepository.save(mapToEntity(edto)));
+        Employee employee = mapToEntity(edto);
+        Employee savedEmployee = employeeRepository.save(employee);
+        employeeRepository.flush();
+        return mapToDto(savedEmployee);
     }
+
+    @Override
+    public EmployeeDto put(Long id, EmployeeDto edto) {
+        Employee existingEmployee = employeeRepository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException("Employee", "id", id));
+
+        existingEmployee.setFirstname(edto.getFirstname());
+        existingEmployee.setLastname(edto.getLastname());
+        existingEmployee.setEmail(edto.getEmail());
+        existingEmployee.setPhone(edto.getPhone());
+        existingEmployee.setGender(edto.getGender());
+        existingEmployee.setDateOfBirth(edto.getDateOfBirth());
+        existingEmployee.setDateOfJoining(edto.getDateOfJoining());
+        existingEmployee.setSalary(edto.getSalary());
+
+        if (edto.getDepartmentId() != null) {
+            Department department = departmentRepository.findById(edto.getDepartmentId())
+                    .orElseThrow(() -> new DepartmentNotFoundException("Department", "id", edto.getDepartmentId()));
+            existingEmployee.setDepartment(department);
+        }
+
+        if (edto.getProjectIds() != null && !edto.getProjectIds().isEmpty()) {
+            Set<Project> projects = edto.getProjectIds().stream()
+                    .map(pid -> projectRepository.findById(pid)
+                            .orElseThrow(() -> new ProjectNotFoundException("Project", "id", pid)))
+                    .collect(Collectors.toSet());
+            existingEmployee.setProjects(projects);
+        }
+
+        Employee updatedEmployee = employeeRepository.save(existingEmployee);
+        return mapToDto(updatedEmployee);
+    }
+
+    @Override
+    public void deleteEmployee(Long id) {
+        if (!employeeRepository.existsById(id)) {
+            throw new EmployeeNotFoundException("Employee", "id", id);
+        }
+        employeeRepository.deleteById(id);
+    }
+
+    @Override
+    public EmployeeDto getEmployeeById(Long id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException("Employee", "id", id));
+        return mapToDto(employee);
+    }
+
+    @Override
+    public List<EmployeeDto> getAllEmployee() {
+        return employeeRepository.findAll().stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    // ================= Utility Methods =================
 
     private EmployeeDto mapToDto(Employee emp) {
         EmployeeDto dto = new EmployeeDto();
@@ -62,7 +123,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private Employee mapToEntity(EmployeeDto edto) {
         Employee employee = new Employee();
-        employee.setId(edto.getId());
+//        employee.setId(edto.getId()); //kyu zbrdsti set krna jb hibernate autogenerate krra hai toh
         employee.setFirstname(edto.getFirstname());
         employee.setLastname(edto.getLastname());
         employee.setEmail(edto.getEmail());
@@ -80,65 +141,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         if (edto.getProjectIds() != null && !edto.getProjectIds().isEmpty()) {
             Set<Project> projects = edto.getProjectIds().stream()
-                    .map(id -> projectRepository.findById(id)
-                            .orElseThrow(() -> new ProjectNotFoundException("Project", "id", id)))
-                    .collect(Collectors.toSet());
-            employee.setProjects(projects);
-        }
-
-        return employee;
-    }
-
-    @Override
-    public EmployeeDto put(Long id, EmployeeDto edto) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EmployeeNotFoundException("Employee", "id", id));
-
-        employee.setFirstname(edto.getFirstname());
-        employee.setLastname(edto.getLastname());
-        employee.setEmail(edto.getEmail());
-        employee.setPhone(edto.getPhone());
-        employee.setGender(edto.getGender());
-        employee.setDateOfBirth(edto.getDateOfBirth());
-        employee.setDateOfJoining(edto.getDateOfJoining());
-        employee.setSalary(edto.getSalary());
-
-        if (edto.getDepartmentId() != null) {
-            Department dept = departmentRepository.findById(edto.getDepartmentId())
-                    .orElseThrow(() -> new DepartmentNotFoundException("Department", "id", edto.getDepartmentId()));
-            employee.setDepartment(dept);
-        }
-
-        if (edto.getProjectIds() != null && !edto.getProjectIds().isEmpty()) {
-            Set<Project> projects = edto.getProjectIds().stream()
                     .map(pid -> projectRepository.findById(pid)
                             .orElseThrow(() -> new ProjectNotFoundException("Project", "id", pid)))
                     .collect(Collectors.toSet());
             employee.setProjects(projects);
         }
 
-        return mapToDto(employeeRepository.save(employee));
-    }
-
-    @Override
-    public void deleteEmployee(Long id) {
-        if (!employeeRepository.existsById(id)) {
-            throw new EmployeeNotFoundException("Employee", "id", id);
-        }
-        employeeRepository.deleteById(id);
-    }
-
-    @Override
-    public EmployeeDto getEmployeeById(Long id) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EmployeeNotFoundException("Employee", "id", id));
-        return mapToDto(employee);
-    }
-
-    @Override
-    public List<EmployeeDto> getAllEmployee() {
-        return employeeRepository.findAll().stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+        return employee;
     }
 }

@@ -26,7 +26,8 @@ public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
 
-    private String secretKey = "" ;
+    @Value("${jwt.secret}")
+    private String secretKey ;
 
     @Value("${jwt.validity}")
     private  long validity ;
@@ -56,8 +57,9 @@ public class JwtUtils {
 //        return Keys.hmacShaKeyFor(keyBytes);
 //    }
 
-    private SecretKey getKey() {
-        return Jwts.SIG.HS256.key().build(); // Auto-generates secure key
+    private Key getKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     private Claims extractAllClaims(String token) {
