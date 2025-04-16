@@ -17,7 +17,7 @@ public class EmployeeController {
     @Autowired
     private EmployeeService employeeService ;
 
-    @GetMapping("/getall")
+   @GetMapping("/getall")
     public ResponseEntity<List<EmployeeDto>> getAllEmployee(){
         return ResponseEntity.ok(employeeService.getAllEmployee());
     }
@@ -27,7 +27,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
-    @PutMapping("/{id}")
+     @PutMapping("/{id}")
     public ResponseEntity<EmployeeDto> updateEmployee(@PathVariable Long id , @RequestBody EmployeeDto dto){
         return ResponseEntity.ok(employeeService.put(id ,dto));
     }
