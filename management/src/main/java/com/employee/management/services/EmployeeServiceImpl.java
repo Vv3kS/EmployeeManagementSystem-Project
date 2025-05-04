@@ -93,6 +93,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<EmployeeDto> searchEmp(String query) {
+        return employeeRepository.searchEmployees(query.toLowerCase());
+    }
+
     // ================= Utility Methods =================
 
     private EmployeeDto mapToDto(Employee emp) {

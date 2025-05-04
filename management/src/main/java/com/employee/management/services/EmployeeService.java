@@ -12,4 +12,5 @@ public interface EmployeeService {
     EmployeeDto getEmployeeById(Long id) ;
     List<EmployeeDto> getAllEmployee() ;
 
+    List<EmployeeDto> searchEmp(String query);
 }

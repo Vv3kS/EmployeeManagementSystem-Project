@@ -36,8 +36,13 @@ public class SecurityConfig {
                 .csrf(customizer -> customizer.disable())
                 .authorizeHttpRequests(request -> request.requestMatchers("/user/register","/user/login")
                         .permitAll()
-                        .requestMatchers("/swagger-ui")
-                        .permitAll()
+                        .requestMatchers(                        "/user/register",
+                                "/user/login",
+                                "/v3/api-docs/**",           // Swagger API docs
+                                "/swagger-ui/**",             // Swagger UI
+                                "/swagger-ui.html",           // Swagger UI HTML
+                                "/webjars/**"                // Swagger resources) //abhi khali access diya hu implement kruga baad me
+                        ).permitAll()
                         .requestMatchers("/user/admin").hasRole("ADMIN")
                         .requestMatchers("/user/**").hasAnyRole("USER","ADMIN","EMPLOYEE")
                         .anyRequest().authenticated())
